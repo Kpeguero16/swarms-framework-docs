@@ -647,22 +647,44 @@ async def arun(
 ) -> Any
 ```
 
-### Sequential tasks
+### run_batched
 
-Use an explicit loop to run related tasks in order. `Agent.run_batched` and
-`Agent.bulk_run` have been removed; replace their calls with direct `run` calls.
-Each call uses the same agent and sees the earlier tasks and answers in its
-conversation. Create a separate agent for each independent conversation.
+Run multiple tasks **sequentially**, one after another, and collect the results. For concurrent execution use `run_concurrent_tasks` instead.
 
 ```python
-tasks = ["Analyze Q1 data", "Summarize the findings", "Recommend next steps"]
-results = [agent.run(task) for task in tasks]
-
-inputs = [{"task": "Analyze Q1 data"}, {"task": "Summarize the findings"}]
-results = [agent.run(**item) for item in inputs]
+def run_batched(
+    tasks: List[str],
+    imgs: List[str] = None,
+    *args,
+    **kwargs,
+) -> List[Any]
 ```
 
-A failing call raises and stops the loop; later tasks do not run.
+<ParamField path="tasks" type="List[str]">
+  List of tasks to run, in order
+</ParamField>
+
+<ParamField path="imgs" type="List[str]" default="None">
+  One image per task, paired by position. Omit to run the tasks without images. A length mismatch raises `ValueError` rather than silently dropping the extras.
+</ParamField>
+
+<ResponseField name="return" type="List[Any]">
+  List of results from each task execution, in the same order as the input tasks
+</ResponseField>
+
+```python
+tasks = [
+    "Analyze the financial data for Q1",
+    "Generate a summary report for stakeholders",
+    "Create recommendations for Q2 planning"
+]
+
+batch_results = agent.run_batched(tasks)
+
+for i, (task, result) in enumerate(zip(tasks, batch_results)):
+    print(f"Task {i+1}: {task}")
+    print(f"Result: {result}\n")
+```
 
 ### run_stream
 
@@ -1024,6 +1046,7 @@ Every public method on `Agent`. Tool-handling methods now live on `agent.tool_ma
 | `arun(task, img)` | Async version of `run` | `await agent.arun("Task")` |
 | `run_stream(task, img)` | Sync streaming generator over `run` | `for t in agent.run_stream("Task"): ...` |
 | `arun_stream(task, img)` | Async streaming generator over `run` | `async for t in agent.arun_stream("Task"): ...` |
+| `run_batched(tasks, imgs)` | Run multiple tasks sequentially | `agent.run_batched(["Task 1", "Task 2"])` |
 | `run_concurrent_tasks(tasks)` | Run multiple tasks concurrently | `agent.run_concurrent_tasks(["T1", "T2"])` |
 | `call_llm(task, img, imgs, current_loop, streaming_callback)` | Make one LLM call through `LLMManager`, with the selected skills attached | `agent.call_llm("Generate text")` |
 | `plan(task)` | Add an LLM-generated plan to the conversation | `agent.plan("Analyze trends")` |
@@ -1540,7 +1563,7 @@ print(result)
 
 ### Batch Processing
 
-Run related tasks one after another with direct `run` calls. The agent keeps the conversation between calls:
+Run a list of tasks one after another with `run_batched`. It is sequential, not concurrent — reach for `run_concurrent_tasks` when the tasks are independent and you want them in parallel:
 
 ```python
 tasks = [
@@ -1549,17 +1572,12 @@ tasks = [
     "Create recommendations for Q2 planning"
 ]
 
-batch_results = [agent.run(task) for task in tasks]
+batch_results = agent.run_batched(tasks)
 
 # One image per task, paired by position
 tasks = ["Analyze this chart", "Identify patterns", "Summarize insights"]
 images = ["chart1.png", "chart2.png", "chart3.png"]
-if len(tasks) != len(images):
-    raise ValueError("Pass one image per task")
-batch_results = [
-    agent.run(task=task, img=image)
-    for task, image in zip(tasks, images)
-]
+batch_results = agent.run_batched(tasks, imgs=images)
 ```
 
 Images are subject to the same limitation described under [`run`](#run).
@@ -2075,7 +2093,7 @@ responses = [agent.run(**item) for item in tasks]
 
 # Run multiple tasks in order
 task_list = ["Analyze data", "Generate report", "Create summary"]
-batch_responses = [agent.run(task) for task in task_list]
+batch_responses = agent.run_batched(task_list)
 
 # Await a run without blocking the event loop
 result = asyncio.run(agent.arun("Summarize the report"))
@@ -2225,7 +2243,7 @@ Every constructor parameter, including the MCP, reasoning, memory, tool, and mar
 | `autosave`, `save`/`load`                               | Utilize autosave and save/load methods for continuity across sessions.                           |
 | `dynamic_context_window` & `check_available_tokens()`    | Optimize token usage with the dynamic_context_window parameter and the check_available_tokens() method. |
 | `concurrent` & `async` methods                          | Use concurrent and async methods for performance-critical applications.                          |
-| Sequential tasks | Use an explicit loop over `run` for related tasks; create separate agents for independent conversations. |
+| `run_batched`                                           | Leverage run_batched to process a list of related tasks in order; use run_concurrent_tasks for parallelism. |
 | `mcp_url` or `mcp_urls`                                 | Use mcp_url or mcp_urls to extend agent capabilities with external tools.                        |
 | `react_on`                                              | Enable react_on for complex reasoning tasks requiring step-by-step analysis.                     |
 | `tool_retry_attempts`                                   | Configure tool_retry_attempts for robust tool execution in production environments.              |
