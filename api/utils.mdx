@@ -677,8 +677,11 @@ parameters were removed; pass those options by keyword when migrating.
 Use `max_tokens` for the portable output-token limit. Provider-specific
 `max_completion_tokens` and `audio` keywords now follow the existing
 `**kwargs` override path instead of being consumed and ignored. For example,
-an `audio` output-configuration dictionary is forwarded to the provider;
-an audio filename is no longer silently discarded. This forwarding applies
+an `audio` output-configuration dictionary is forwarded to the provider.
+`audio="clip.wav"` is forwarded the same way: OpenAI reads `audio` as an
+output setting that must be a dictionary, so it will likely reject the
+request, while LiteLLM drops the keyword for providers such as Anthropic and
+Gemini, so the filename is still ignored there. This forwarding applies
 to constructor settings, sync calls, and async calls. Set provider
 `modalities` through keyword arguments rather than assigning `llm.modalities`.
 
