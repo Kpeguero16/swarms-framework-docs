@@ -19,7 +19,7 @@ Swarms supports multiple output formats through the `output_type` parameter. `ou
 - `"final"` / `"last"` — just the content of the last message. This is a string for a text answer, and a list of tool-call dicts when the model answered with a function call
 - `"str"` / `"string"` / `"all"` — the full conversation as one string, with a timestamp and role label on each message
 - `"list"` — the conversation as a list of `{"role", "content"}` dicts
-- `"dict"` / `"dictionary"` — the full conversation history as a Python `list` of message dicts, including each message's `timestamp` and `message_id` (despite the name, this is a list, not a single dict)
+- `"dict"` / `"dictionary"` — the full conversation history as a Python `list` of message dicts, including each message's `timestamp` and `message_id`; turns passed in through `messages` have no `message_id` (despite the name, this is a list, not a single dict)
 - `"json"` — the full conversation history serialized as a JSON string (an array of message dicts, **not** a single schema-shaped object)
 - `"yaml"` — the conversation history as a YAML string
 - `"dict-all-except-first"` — every message after the system prompt and the first input, as a list of message dicts. This is the default `output_type` of several multi-agent harnesses (`HeavySwarm`, `HierarchicalSwarm`, `ConcurrentWorkflow`, `LLMCouncil`, `PlannerWorkerSwarm`, and others)

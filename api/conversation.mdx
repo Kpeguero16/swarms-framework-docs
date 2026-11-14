@@ -79,7 +79,7 @@ from swarms import Conversation
 </ParamField>
 
 <ParamField path="message_id_on" type="bool" default="False">
-  Attach a UUID4 `message_id` to every message.
+  Attach a UUID4 `message_id` to every message added with `add()`. Messages imported with `add_messages()` or the `messages` argument get none.
 </ParamField>
 
 <ParamField path="tokenizer_model_name" type="str" default="gpt-5.4">
@@ -162,7 +162,7 @@ def add(
 
 **Returns:** The stored message dict. Depending on the constructor flags it also carries `timestamp`, `message_id`, `category`, `metadata`, and `token_count`. With `memory_md_path`, the message is appended to `MEMORY.md` unless its content is `None` or blank. With `channel`, it is posted to the channel unless its role is `System` or `system` or its content is `None`. With `autosave=True`, the conversation is exported after the add.
 
-`add_in_memory()` takes the same arguments and does the same, except that it never autosaves.
+`add_in_memory()` takes the same arguments and does the same, except that it never autosaves. It also takes `message_id` (bool, default `True`): pass `False` to add the message without a `message_id` when `message_id_on` is set.
 
 ### add_messages()
 
@@ -175,7 +175,7 @@ def add_messages(self, messages: List[Dict[str, Any]]) -> list
 **Parameters:**
 - `messages` (List[Dict[str, Any]]): Dicts with a `role` key and usually a `content` key. Any other keys, such as `name`, `tool_calls`, or `tool_call_id`, are kept under the message's `metadata`, so a tool exchange survives the round trip.
 
-**Returns:** The result of each `add()`, in order. Raises `ValueError` when an item is not a dict or has no `role`.
+**Returns:** The stored messages, in order. None of them carries a `message_id`, even with `message_id_on=True`: `Agent.run(messages=...)` imports the whole prior history on every call, and an id for each turn was most of the cost of a deep multi-agent flow. With `autosave=True`, the conversation is exported once, after the last message. Raises `ValueError` when an item is not a dict or has no `role`.
 
 ### return_history_as_string()
 
